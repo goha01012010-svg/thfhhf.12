@@ -1,41 +1,46 @@
 import os
 import logging
+from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Включаем логирование для отслеживания ошибок
+# Загружаем переменные окружения
+load_dotenv()
+
+# Настройка логирования
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
+logger = logging.getLogger(__name__)
 
-# Получаем токен из переменной окружения (БЕЗОПАСНО!)
+# Получаем токен
 TOKEN = '8534815900:AAHxGeuG6_SnOzIXwFTmaKoaMFiHsDX4b7E'
 
 if not TOKEN:
-    raise ValueError("Переменная окружения TELEGRAM_BOT_TOKEN не установлена!")
+    logger.error("Токен не найден! Проверьте файл .env")
+    exit(1)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Отправляет приветственное сообщение на команду /start"""
+    """Отправляет приветственное сообщение"""
     user = update.effective_user
     await update.message.reply_text(
         f"Привет, {user.first_name}! 👋\n"
-        f"Я простой бот, который отвечает на /start.\n"
+        f"Я бот, который работает в Docker контейнере.\n"
         f"Твой ID: {user.id}"
     )
 
 def main():
-    """Запускает бота"""
-    # Создаём приложение
-    application = Application.builder().token(TOKEN).build()
-    
-    # Добавляем обработчик команды /start
-    application.add_handler(CommandHandler("start", start))
-    
-    # Запускаем бота (для вебхуков на хостинге или polling локально)
-    # Используем polling - работает везде
-    print("Бот запущен и слушает команды...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    """Запуск бота"""
+    try:
+        app = Application.builder().token(TOKEN).build()
+        app.add_handler(CommandHandler("start", start))
+        
+        logger.info("Бот успешно запущен!")
+        app.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        logger.error(f"Ошибка при запуске: {e}")
+        exit(1)
 
 if __name__ == '__main__':
     main()
